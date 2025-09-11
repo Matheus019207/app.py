@@ -72,3 +72,19 @@ def fazer_login():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# Rota de Depuração (remova isso em produção!)
+@app.route('/debug/usuarios')
+def ver_usuarios_debug():
+    try:
+        usuarios = Usuario.query.all()
+        lista_usuarios = []
+        for usuario in usuarios:
+            lista_usuarios.append({
+                'id': usuario.id,
+                'nome': usuario.nome,
+                'senha_hash': usuario.senha  # Lembre-se, em produção, NUNCA mostre a senha real
+            })
+        return jsonify(lista_usuarios), 200
+    except Exception as e:
+        return jsonify({'erro': str(e)}), 500
