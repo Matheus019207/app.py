@@ -69,10 +69,7 @@ def fazer_login():
         return jsonify({'mensagem': 'Login bem-sucedido!'}), 200
     else:
         return jsonify({'mensagem': 'Nome de usuário ou senha inválidos'}), 401
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
+    
 # Rota de Depuração (remova isso em produção!)
 @app.route('/debug/usuarios')
 def ver_usuarios_debug():
@@ -88,3 +85,6 @@ def ver_usuarios_debug():
         return jsonify(lista_usuarios), 200
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
