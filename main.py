@@ -21,6 +21,8 @@ class Usuario(db.Model):
     nome = db.Column(db.String(80), unique=True, nullable=False) # Nome de usuário único
     senha = db.Column(db.String(120), nullable=False) # Armazenar a senha
     email = db.Column(db.String(120), nullable=False) # Email opcional
+    cpf = db.Column(db.String(14), nullable=False) # CPF opcional
+    idade = db.Column(db.Integer, nullable=False) # Idade opcional
     
     def __repr__(self):
         return f'<Usuario {self.nome}>'
@@ -38,16 +40,15 @@ def cadastrar_usuario():
     nome_usuario = dados.get('nome')
     senha_usuario = dados.get('senha')
     email_usuario = dados.get('email')
-    
-    if not nome_usuario or not senha_usuario:
-        return jsonify({'mensagem': 'Nome de usuário e senha são obrigatórios'}), 400
+    cpf_usuario = dados.get('cpf')
+    idade_usuario = dados.get('idade')
 
     # Verifica se o usuário já existe no banco de dados
     usuario_existente = Usuario.query.filter_by(nome=nome_usuario).first()
     if usuario_existente:
         return jsonify({'mensagem': 'Nome de usuário já existe'}), 409
 
-    novo_usuario = Usuario(nome=nome_usuario, senha=senha_usuario, email=email_usuario)
+    novo_usuario = Usuario(nome=nome_usuario, senha=senha_usuario, email=email_usuario, cpf=cpf_usuario, idade=idade_usuario)
     db.session.add(novo_usuario)
     db.session.commit()
     
