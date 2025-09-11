@@ -82,7 +82,8 @@ def ver_usuarios_debug():
             lista_usuarios.append({
                 'id': usuario.id,
                 'nome': usuario.nome,
-                'senha_hash': usuario.senha  # Lembre-se, em produção, NUNCA mostre a senha real
+                'senha_hash': usuario.senha,
+                'email': usuario.email
             })
         return jsonify(lista_usuarios), 200
     except Exception as e:
