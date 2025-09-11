@@ -58,14 +58,14 @@ def cadastrar_usuario():
 @app.route('/login', methods=['POST'])
 def fazer_login():
     dados = request.get_json()
-    nome_usuario = dados.get('nome')
+    email_usuario = dados.get('email')
     senha_usuario = dados.get('senha')
     
     if not nome_usuario or not senha_usuario:
         return jsonify({'mensagem': 'Nome de usuário e senha são obrigatórios'}), 400
 
     # Busca o usuário no banco de dados
-    usuario = Usuario.query.filter_by(nome=nome_usuario).first()
+    usuario = Usuario.query.filter_by(email=email_usuario).first()
 
     # Verifica se o usuário existe e se a senha está correta
     if usuario and usuario.senha == senha_usuario:
