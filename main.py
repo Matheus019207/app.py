@@ -61,7 +61,7 @@ def fazer_login():
     email_usuario = dados.get('email')
     senha_usuario = dados.get('senha')
     
-    if not nome_usuario or not senha_usuario:
+    if not email_usuario or not senha_usuario:
         return jsonify({'mensagem': 'Nome de usuário e senha são obrigatórios'}), 400
 
     # Busca o usuário no banco de dados
