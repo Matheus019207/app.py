@@ -62,17 +62,24 @@ def fazer_login():
     senha_usuario = dados.get('senha')
     
     if not email_usuario or not senha_usuario:
-        return jsonify({'mensagem': 'Nome de usuário e senha são obrigatórios'}), 400
+        return jsonify({'mensagem': 'Email e senha são obrigatórios'}), 400
 
     # Busca o usuário no banco de dados
     usuario = Usuario.query.filter_by(email=email_usuario).first()
 
     # Verifica se o usuário existe e se a senha está correta
     if usuario and usuario.senha == senha_usuario:
-        return jsonify({'mensagem': 'Login bem-sucedido!'}), 200
+        return jsonify({
+            'mensagem': 'Login bem-sucedido!',
+            'usuario_logado': {
+                'nome': usuario.nome,
+                'email': usuario.email,
+                'cpf': usuario.cpf,
+                'idade': usuario.idade
+            }
+        }), 200
     else:
-        return jsonify({'mensagem': 'Nome de usuário ou senha inválidos'}), 401
-    
+        return jsonify({'mensagem': 'E-mail ou senha inválidos'}), 401
 # Rota de Depuração (remova isso em produção!)
 @app.route('/debug/usuarios')
 def ver_usuarios_debug():
