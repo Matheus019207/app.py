@@ -125,7 +125,7 @@ class Usuario(db.Model):
     nome = db.Column(db.String(80), unique=True, nullable=False)
     senha = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), nullable=False)
-    pontos = db.Column(db.Integer, default=0)
+    pontos = db.Column(db.Integer(20), default=0)
     
     def __repr__(self):
         return f'<Usuario {self.nome}>'
