@@ -98,18 +98,16 @@
 
 
 
-## Importa as bibliotecas que vamos usar
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS  # Importe o Flask-CORS
 
-# AQUI! A variável 'app' é criada aqui.
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///usuarios.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Adicionei esta linha para habilitar o CORS com cookies
-# A linha abaixo não é mais necessária para autenticação baseada em token, mas pode ser útil para outras requisições
-# CORS(app, supports_credentials=True, origins='*') 
+# Habilita o CORS para todas as rotas
+CORS(app, origins='*')
 
 db = SQLAlchemy(app)
 
@@ -137,7 +135,6 @@ def cadastrar_usuario():
     senha_usuario = dados.get('senha')
     email_usuario = dados.get('email')
 
-    # Verifica se o usuário já existe no banco de dados
     usuario_existente = Usuario.query.filter_by(nome=nome_usuario).first()
     if usuario_existente:
         return jsonify({'mensagem': 'Nome de usuário já existe'}), 409
@@ -161,7 +158,6 @@ def fazer_login():
     usuario = Usuario.query.filter_by(email=email_usuario).first()
 
     if usuario and usuario.senha == senha_usuario:
-        # Retorna o token no corpo da resposta
         return jsonify({
             'mensagem': 'Login bem-sucedido!',
             'token': usuario.email,
