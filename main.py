@@ -206,5 +206,3 @@ def ver_usuarios_debug():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-print("Iniciando o servidor Flask...")
