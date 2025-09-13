@@ -98,10 +98,9 @@
 
 
 
-# Importa as bibliotecas que vamos usar
-from flask import Flask, jsonify, request, make_response
+## Importa as bibliotecas que vamos usar
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS # Adicionei esta biblioteca
 
 # AQUI! A variável 'app' é criada aqui.
 app = Flask(__name__)
@@ -109,7 +108,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///usuarios.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Adicionei esta linha para habilitar o CORS com cookies
-CORS(app, supports_credentials=True, origins='*') 
+# A linha abaixo não é mais necessária para autenticação baseada em token, mas pode ser útil para outras requisições
+# CORS(app, supports_credentials=True, origins='*') 
 
 db = SQLAlchemy(app)
 
@@ -161,25 +161,25 @@ def fazer_login():
     usuario = Usuario.query.filter_by(email=email_usuario).first()
 
     if usuario and usuario.senha == senha_usuario:
-        response = make_response(jsonify({
+        # Retorna o token no corpo da resposta
+        return jsonify({
             'mensagem': 'Login bem-sucedido!',
+            'token': usuario.email,
             'usuario_logado': {
                 'nome': usuario.nome,
                 'email': usuario.email,
             }
-        }))
-        # Configuração do cookie para funcionar entre domínios diferentes
-        response.set_cookie('user_session', email_usuario, max_age=60 * 60 * 24 * 7, secure=True, samesite='None') 
-        return response
+        }), 200
     else:
         return jsonify({'mensagem': 'E-mail ou senha inválidos'}), 401
 
-# Nova rota para verificar se o usuário já está logado via cookie
+# Rota para verificar se o usuário já está logado via token
 @app.route('/status', methods=['GET'])
 def check_login_status():
-    email_do_cookie = request.cookies.get('user_session')
-    if email_do_cookie:
-        usuario = Usuario.query.filter_by(email=email_do_cookie).first()
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        token = auth_header.split(' ')[1]
+        usuario = Usuario.query.filter_by(email=token).first()
         if usuario:
             return jsonify({
                 'logado': True,
