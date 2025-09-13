@@ -138,6 +138,7 @@ def check_login_status():
             return jsonify({
                 'logado': True,
                 'nome': usuario.nome,
+                'email': usuario.email,
                 'pontos': usuario.pontos
             }), 200
     return jsonify({'logado': False}), 200
