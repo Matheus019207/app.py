@@ -1,13 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-import jwt # Importa a biblioteca JWT para lidar com tokens
-from functools import wraps
+from flask_cors import CORS 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///usuarios.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'uma-chave-secreta-muito-segura' # Adicione uma chave secreta
 
 CORS(app, origins='*')
 
@@ -46,26 +43,6 @@ class Resgate(db.Model):
 with app.app_context():
     db.create_all()
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
-
-        if not token:
-            return jsonify({'mensagem': 'Token é ausente ou inválido'}), 401
-
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            usuario_atual = Usuario.query.filter_by(id=data['id']).first()
-        except:
-            return jsonify({'mensagem': 'Token é inválido'}), 401
-        
-        return f(usuario_atual, *args, **kwargs)
-
-    return decorated
-
 # --- Rotas da API ---
 
 # Rota para cadastrar um novo usuário (método POST)
@@ -99,10 +76,9 @@ def fazer_login():
     usuario = Usuario.query.filter_by(email=email_usuario).first()
 
     if usuario and usuario.senha == senha_usuario:
-        token = jwt.encode({'id': usuario.id}, app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({
             'mensagem': 'Login bem-sucedido!',
-            'token': token,
+            'token': usuario.email,
             'usuario_logado': {
                 'nome': usuario.nome,
                 'email': usuario.email,
@@ -114,8 +90,17 @@ def fazer_login():
 
 # Rota para validar um código e adicionar pontos (método POST)
 @app.route('/validar-codigo', methods=['POST'])
-@token_required
-def validar_codigo(usuario_atual):
+def validar_codigo():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'mensagem': 'Token de autenticação ausente ou inválido'}), 401
+    
+    token = auth_header.split(' ')[1]
+    
+    usuario = Usuario.query.filter_by(email=token).first()
+    if not usuario:
+        return jsonify({'mensagem': 'Usuário não encontrado'}), 404
+
     dados = request.get_json()
     codigo_recebido = dados.get('codigo')
 
@@ -126,32 +111,36 @@ def validar_codigo(usuario_atual):
         return jsonify({'mensagem': 'Código inválido'}), 404
     
     # 2. Verifica se o usuário já resgatou este código
-    resgate_existente = Resgate.query.filter_by(usuario_id=usuario_atual.id, codigo_id=codigo_existente.id).first()
+    resgate_existente = Resgate.query.filter_by(usuario_id=usuario.id, codigo_id=codigo_existente.id).first()
     if resgate_existente:
         return jsonify({'mensagem': 'Este código já foi utilizado por você'}), 409
 
     # 3. Adiciona os pontos e registra o resgate
-    usuario_atual.pontos += 1000
-    novo_resgate = Resgate(usuario_id=usuario_atual.id, codigo_id=codigo_existente.id)
+    usuario.pontos += 1000
+    novo_resgate = Resgate(usuario_id=usuario.id, codigo_id=codigo_existente.id)
     db.session.add(novo_resgate)
     db.session.commit()
     
     return jsonify({
         'sucesso': True,
         'mensagem': 'Pontos adicionados com sucesso!', 
-        'novos_pontos': usuario_atual.pontos
+        'novos_pontos': usuario.pontos
     }), 200
 
 # Rota para verificar se o usuário já está logado via token
 @app.route('/status', methods=['GET'])
-@token_required
-def check_login_status(usuario_atual):
-    return jsonify({
-        'logado': True,
-        'nome': usuario_atual.nome,
-        'email': usuario_atual.email, # <-- Linha adicionada
-        'pontos': usuario_atual.pontos
-    }), 200
+def check_login_status():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        token = auth_header.split(' ')[1]
+        usuario = Usuario.query.filter_by(email=token).first()
+        if usuario:
+            return jsonify({
+                'logado': True,
+                'nome': usuario.nome,
+                'pontos': usuario.pontos
+            }), 200
+    return jsonify({'logado': False}), 200
     
 # Rota de Depuração (apenas para testar)
 @app.route('/debug/usuarios')
