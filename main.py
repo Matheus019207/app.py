@@ -82,11 +82,22 @@ def fazer_login():
 # Rota para validar um código e adicionar pontos (método POST)
 @app.route('/validar-codigo', methods=['POST'])
 def validar_codigo():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'mensagem': 'Token de autenticação ausente ou inválido'}), 401
+    
+    token = auth_header.split(' ')[1]
+    
+    # 1. Encontra o usuário pelo email do token
+    usuario = Usuario.query.filter_by(email=token).first()
+    if not usuario:
+        return jsonify({'mensagem': 'Usuário não encontrado'}), 404
+
+    # 2. Recebe o código do corpo da requisição
     dados = request.get_json()
     codigo_recebido = dados.get('codigo')
-    email_usuario = dados.get('email')
 
-    # 1. Encontra o código no banco de dados
+    # 3. Encontra o código no banco de dados
     codigo_existente = Codigo.query.filter_by(codigo=codigo_recebido).first()
 
     if not codigo_existente:
@@ -95,12 +106,7 @@ def validar_codigo():
     if codigo_existente.usado:
         return jsonify({'mensagem': 'Este código já foi utilizado'}), 409
     
-    # 2. Encontra o usuário pelo email
-    usuario = Usuario.query.filter_by(email=email_usuario).first()
-    if not usuario:
-        return jsonify({'mensagem': 'Usuário não encontrado'}), 404
-
-    # 3. Adiciona os pontos ao usuário e marca o código como usado
+    # 4. Adiciona os pontos ao usuário e marca o código como usado
     usuario.pontos += 1000
     codigo_existente.usado = True
     db.session.commit()
